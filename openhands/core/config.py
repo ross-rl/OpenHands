@@ -368,6 +368,7 @@ class AppConfig:
                 'e2b_api_key',
                 'github_token',
                 'jwt_secret',
+                'runloop_api_key',
             ]:
                 attr_value = '******' if attr_value else None
 

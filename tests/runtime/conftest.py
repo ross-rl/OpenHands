@@ -14,6 +14,7 @@ from openhands.events import EventStream
 from openhands.runtime.client.runtime import EventStreamRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.runtime.remote.runtime import RemoteRuntime
+from openhands.runtime.runloop.runtime import RunloopRuntime
 from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
 
@@ -130,6 +131,8 @@ def get_box_classes():
         return [EventStreamRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
+    elif runtime.lower() == 'runloop':
+        return [RunloopRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
@@ -216,6 +219,8 @@ def _load_runtime(
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
     config = load_app_config()
+    print('config loaded')
+    print(config)
     config.run_as_openhands = run_as_openhands
 
     # Folder where all tests create their own folder

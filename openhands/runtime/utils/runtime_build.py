@@ -108,6 +108,7 @@ def _generate_dockerfile(
     )
     template = env.get_template('Dockerfile.j2')
 
+    print(f'base_image={base_image}, skip_init={skip_init}, extra_deps={extra_deps}')
     dockerfile_content = template.render(
         base_image=base_image,
         skip_init=skip_init,

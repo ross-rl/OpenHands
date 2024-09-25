@@ -435,6 +435,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
             # compute the expected env var name from the prefix and field name
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
+
             if is_dataclass(field_type):
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)

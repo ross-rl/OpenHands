@@ -220,11 +220,10 @@ def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
 
 def test_multi_cmd_run_in_single_line(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
-    # TODO: we cd on boot, ok?
     try:
         obs = _run_cmd_action(runtime, 'pwd && ls -l')
         assert obs.exit_code == 0
-        # assert '/workspace' in obs.content
+        assert '/workspace' in obs.content
         assert 'total 0' in obs.content
     finally:
         _close_test_runtime(runtime)
@@ -341,6 +340,7 @@ def test_overwrite_existing_file(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
     try:
         sandbox_dir = _get_sandbox_folder(runtime)
+
         obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
 

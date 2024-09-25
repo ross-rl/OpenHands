@@ -341,7 +341,6 @@ def test_overwrite_existing_file(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
     try:
         sandbox_dir = _get_sandbox_folder(runtime)
-        print(f'sandbox_dir={sandbox_dir}')
         obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
 

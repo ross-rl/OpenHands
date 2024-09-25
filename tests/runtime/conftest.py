@@ -219,8 +219,6 @@ def _load_runtime(
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
     config = load_app_config()
-    print('config loaded')
-    print(config)
     config.run_as_openhands = run_as_openhands
 
     # Folder where all tests create their own folder

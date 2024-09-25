@@ -207,13 +207,11 @@ def test_cmd_run(temp_dir, box_class, run_as_openhands):
 
 def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
-    # TODO: Where do we adduser, loginas user
     try:
         obs = _run_cmd_action(runtime, 'cd ~ && pwd')
         assert obs.exit_code == 0
         if run_as_openhands:
             assert '/home/openhands' in obs.content
-            # assert '/home/user' in obs.content
         else:
             assert '/root' in obs.content
     finally:

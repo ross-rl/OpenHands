@@ -55,8 +55,7 @@ class RunloopRuntime(Runtime):
             name=sid,
             launch_parameters=LaunchParameters(keep_alive_time_seconds=60 * 2),
             setup_commands=[
-                f'sudo mkdir -p {config.workspace_mount_path_in_sandbox} && '
-                f'sudo chown user:user {config.workspace_mount_path_in_sandbox}',
+                f'sudo chown user:user /openhands && mkdir -p {config.workspace_mount_path_in_sandbox}'
             ],
             extra_body={'prebuilt': 'public.ecr.aws/c1r6f8a9/prebuilts:allhands'},
         )
@@ -77,9 +76,16 @@ class RunloopRuntime(Runtime):
         if devbox.status != 'running':
             raise ConnectionRefusedError('Devbox is not running')
 
+        if self.config.run_as_openhands:
+            initialization_cmd = 'su - openhands; '
+        else:
+            initialization_cmd = 'sudo su -; '
+
+        initialization_cmd += f'cd {self.config.workspace_mount_path_in_sandbox}; '
+
         self.api_client.devboxes.execute_sync(
             id=self.devbox.id,
-            command=f'cd {self.config.workspace_mount_path_in_sandbox}',
+            command=initialization_cmd,
             shell_name=self.shell_name,
         )
 
@@ -135,10 +141,19 @@ class RunloopRuntime(Runtime):
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         self._wait_until_alive()
 
-        print(f'Copying {host_src} to {sandbox_dest}')
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'file {host_src} does not exist')
+
+        mkdir_resp = self.api_client.devboxes.execute_sync(
+            id=self.devbox.id, command=f'mkdir -p {sandbox_dest}'
+        )
+        if mkdir_resp.exit_status != 0:
+            raise Exception(f'error creating directory: {mkdir_resp.stdout}')
+
         if recursive:
             # For recursive copy, create a zip file
-            tmp_zip_file_path = f'/tmp/{sandbox_dest}.zip'
+            # Create uuid
+            tmp_zip_file_path = '/tmp/tmp.zip'
             with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                 temp_zip_path = temp_zip.name
 
@@ -150,29 +165,26 @@ class RunloopRuntime(Runtime):
                                 file_path, os.path.dirname(host_src)
                             )
                             zipf.write(file_path, arcname)
-
-                # Upload zip
                 self.api_client.devboxes.upload_file(
                     id=self.devbox.id,
-                    file=Path(temp_zip.name),
+                    file=Path(temp_zip_path),
                     path=tmp_zip_file_path,
                 )
 
                 self.api_client.devboxes.execute_sync(
                     id=self.devbox.id,
-                    command=f'unzip /tmp/uploaded.zip -d {sandbox_dest} && rm {tmp_zip_file_path}',
+                    command=f'unzip {tmp_zip_file_path} -d {sandbox_dest} && rm {tmp_zip_file_path}',
                 )
 
         else:
-            host_path = Path(host_src)
-            if host_path.is_dir():
-                raise ValueError('Recursive copy is required for directories')
-
-            mkdir_resp = self.api_client.devboxes.execute_sync(
+            self.api_client.devboxes.execute_sync(
                 id=self.devbox.id, command=f'mkdir -p {sandbox_dest}'
             )
-            if mkdir_resp.exit_status != 0:
-                raise Exception(f'Error creating directory: {mkdir_resp.stdout}')
+
+            host_path = Path(host_src)
+
+            if host_path.is_dir():
+                raise ValueError('recursive copy is required for directories')
 
             self.api_client.devboxes.upload_file(
                 id=self.devbox.id,
@@ -197,17 +209,34 @@ class RunloopRuntime(Runtime):
 
     def run(self, action: CmdRunAction) -> Observation:
         self._wait_until_alive()
-
-        # TODO: make this async vs sync
-        # DO we kill? where do we manage timeout. etc
         try:
+            command = ''
+            if action.keep_prompt:
+                # If "keep_prompt", echo standard ps1 before continuing
+                prompt = ' $ ' if self.config.run_as_openhands else ' # '
+                user = 'openhands' if self.config.run_as_openhands else 'root'
+                command = f'echo -n "{user}@$(hostname):$(pwd) {prompt} " && '
+
+            # Escape single quotes
+            escaped_action = action.command.replace("'", "'\"'\"'")
+
+            command = command + escaped_action
+
+            if self.config.run_as_openhands:
+                formatted_command = f"/bin/bash -c '{command}'"
+            else:
+                formatted_command = f"sudo /bin/bash -c '{command}'"
+
+            print(f'running command={formatted_command}')
             result = self.api_client.devboxes.execute_sync(
                 id=self.devbox.id,
-                command=action.command,
+                command=formatted_command,
                 shell_name=self.shell_name,
             )
+            print(f'run result = {result}')
+
             return CmdOutputObservation(
-                content=result.stdout,
+                content=result.stdout.replace('\n', '\r\n'),
                 command_id=action.id,
                 command=action.command,
                 exit_code=result.exit_status,

@@ -60,7 +60,7 @@ class RunloopRuntime(Runtime):
         self.shell_name = 'openhands'
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(60),
+        stop=tenacity.stop_after_attempt(90),
         wait=tenacity.wait_fixed(0.75),
     )
     def _wait_until_alive(self):
@@ -74,12 +74,7 @@ class RunloopRuntime(Runtime):
         if devbox.status != 'running':
             raise ConnectionRefusedError('Devbox is not running')
 
-        if self.config.run_as_openhands:
-            initialization_cmd = 'su - openhands; '
-        else:
-            initialization_cmd = 'sudo su -; '
-
-        initialization_cmd += f'cd {self.config.workspace_mount_path_in_sandbox}; '
+        initialization_cmd = f'cd {self.config.workspace_mount_path_in_sandbox}; '
 
         self.api_client.devboxes.execute_sync(
             id=self.devbox.id,
@@ -211,7 +206,7 @@ class RunloopRuntime(Runtime):
             command = ''
             if action.keep_prompt:
                 # If "keep_prompt", echo standard ps1 before continuing
-                prompt = ' $ ' if self.config.run_as_openhands else ' # '
+                prompt = '$' if self.config.run_as_openhands else '#'
                 user = 'openhands' if self.config.run_as_openhands else 'root'
                 command = f'echo -n "{user}@$(hostname):$(pwd) {prompt} " && '
 
@@ -221,7 +216,7 @@ class RunloopRuntime(Runtime):
             command = command + escaped_action
 
             if self.config.run_as_openhands:
-                formatted_command = f"/bin/bash -c '{command}'"
+                formatted_command = f"eval '{command}'"
             else:
                 formatted_command = f"sudo /bin/bash -c '{command}'"
 

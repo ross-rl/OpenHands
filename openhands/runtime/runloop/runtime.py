@@ -54,12 +54,10 @@ class RunloopRuntime(Runtime):
         self.devbox = self.api_client.devboxes.create(
             name=sid,
             launch_parameters=LaunchParameters(keep_alive_time_seconds=60 * 2),
-            setup_commands=[
-                f'sudo chown user:user /openhands && mkdir -p {config.workspace_mount_path_in_sandbox}'
-            ],
-            extra_body={'prebuilt': 'public.ecr.aws/c1r6f8a9/prebuilts:allhands'},
+            setup_commands=[f'mkdir -p {config.workspace_mount_path_in_sandbox}'],
+            extra_body={'prebuilt': 'openhands'},
         )
-        self.shell_name = 'allhands'
+        self.shell_name = 'openhands'
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(60),

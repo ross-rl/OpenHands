@@ -7,7 +7,6 @@ from zipfile import ZipFile
 
 import tenacity
 from runloop_api_client import APIStatusError, Runloop
-from runloop_api_client.types.devbox_create_params import LaunchParameters
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
@@ -53,14 +52,11 @@ class RunloopRuntime(Runtime):
         assert config.runloop_api_key, 'Runloop API key is required'
         self.config = config
 
-        self.api_client = Runloop(
-            bearer_token=config.runloop_api_key, base_url='https://api.runloop.pro'
-        )
+        self.api_client = Runloop(bearer_token=config.runloop_api_key)
         self.devbox = self.api_client.devboxes.create(
             name=sid,
             setup_commands=[f'mkdir -p {config.workspace_mount_path_in_sandbox}'],
-            launch_parameters=LaunchParameters(keep_alive_time_seconds=2 * 60),
-            extra_body={'prebuilt': 'openhands'},
+            prebuilt='openhands',
         )
         self.shell_name = 'openhands'
 

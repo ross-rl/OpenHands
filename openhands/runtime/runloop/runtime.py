@@ -2,10 +2,12 @@ import logging
 import os
 import tempfile
 from pathlib import Path
+from typing import Callable
 from zipfile import ZipFile
 
 import tenacity
 from runloop_api_client import APIStatusError, Runloop
+from runloop_api_client.types.devbox_create_params import LaunchParameters
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
@@ -31,7 +33,8 @@ from openhands.runtime.utils.files import read_lines
 class RunloopRuntime(Runtime):
     """
     The interface for connecting to the Runloop provided cloud Runtime.
-
+    The RunloopRuntime provides a Runtime compliant implementation for using
+    a Runloop Devbox as the OpenHands runtime.
     """
 
     def __init__(
@@ -41,18 +44,22 @@ class RunloopRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Callable | None = None,
     ):
-        super().__init__(config, event_stream, sid, plugins, env_vars)
+        super().__init__(
+            config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
 
         assert config.runloop_api_key, 'Runloop API key is required'
         self.config = config
 
         self.api_client = Runloop(
-            bearer_token=config.runloop_api_key,
+            bearer_token=config.runloop_api_key, base_url='https://api.runloop.pro'
         )
         self.devbox = self.api_client.devboxes.create(
             name=sid,
             setup_commands=[f'mkdir -p {config.workspace_mount_path_in_sandbox}'],
+            launch_parameters=LaunchParameters(keep_alive_time_seconds=2 * 60),
             extra_body={'prebuilt': 'openhands'},
         )
         self.shell_name = 'openhands'

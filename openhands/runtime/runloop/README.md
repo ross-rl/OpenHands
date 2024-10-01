@@ -1,6 +1,6 @@
 # Runloop Runtime
-Runloop provides a fast, secure and scalable runtime environment to service AI-generated
-coding needs. Check out the [runloop docs](https://docs.runloop.ai/overview/what-is-runloop)
+Runloop provides a fast, secure and scalable AI sandbox (Devbox).
+ Check out the [runloop docs](https://docs.runloop.ai/overview/what-is-runloop)
 for more detail
 
 ## Access
@@ -18,8 +18,8 @@ Configure the runtime
 export RUNTIME="runloop"
 ```
 
-## Additional tools
-Runloop provides additional tools when interacting with your Devbox based
+## Interact with your devbox
+Runloop provides additional tools to interact with your Devbox based
 runtime environment. See the [docs](https://docs.runloop.ai/tools) for an up
 to date list of tools.
 

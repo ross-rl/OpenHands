@@ -6,7 +6,6 @@ from zipfile import ZipFile
 
 import tenacity
 from runloop_api_client import APIStatusError, Runloop
-from runloop_api_client.types.devbox_create_params import LaunchParameters
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
@@ -31,7 +30,8 @@ from openhands.runtime.utils.files import read_lines
 
 class RunloopRuntime(Runtime):
     """
-    The runtime interface for connecting to the Runloop provided cloud Runtime.
+    The interface for connecting to the Runloop provided cloud Runtime.
+
     """
 
     def __init__(
@@ -49,11 +49,9 @@ class RunloopRuntime(Runtime):
 
         self.api_client = Runloop(
             bearer_token=config.runloop_api_key,
-            base_url='https://api.runloop.pro',
         )
         self.devbox = self.api_client.devboxes.create(
             name=sid,
-            launch_parameters=LaunchParameters(keep_alive_time_seconds=60 * 2),
             setup_commands=[f'mkdir -p {config.workspace_mount_path_in_sandbox}'],
             extra_body={'prebuilt': 'openhands'},
         )
@@ -220,13 +218,11 @@ class RunloopRuntime(Runtime):
             else:
                 formatted_command = f"sudo /bin/bash -c '{command}'"
 
-            print(f'running command={formatted_command}')
             result = self.api_client.devboxes.execute_sync(
                 id=self.devbox.id,
                 command=formatted_command,
                 shell_name=self.shell_name,
             )
-            print(f'run result = {result}')
 
             return CmdOutputObservation(
                 content=result.stdout.replace('\n', '\r\n'),

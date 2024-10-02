@@ -92,15 +92,20 @@ class RunloopRuntime(Runtime):
     def read(self, action: FileReadAction) -> Observation:
         self._wait_until_alive()
 
-        file_contents = self.api_client.devboxes.read_file_contents(
-            id=self.devbox.id, file_path=action.path
-        )
-        return FileReadObservation(
-            content=''.join(
-                read_lines(file_contents.split('\n'), action.start, action.end)
-            ),
-            path=action.path,
-        )
+        try:
+            file_contents = self.api_client.devboxes.read_file_contents(
+                id=self.devbox.id, file_path=action.path
+            )
+            return FileReadObservation(
+                content=''.join(
+                    read_lines(file_contents.split('\n'), action.start, action.end)
+                ),
+                path=action.path,
+            )
+        except APIStatusError as e:
+            return ErrorObservation(
+                content=e.message,
+            )
 
     def write(self, action: FileWriteAction) -> Observation:
         self._wait_until_alive()

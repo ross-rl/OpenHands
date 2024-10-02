@@ -24,7 +24,7 @@ runtime environment. See the [docs](https://docs.runloop.ai/tools) for an up
 to date list of tools.
 
 ### Dashboard
-View logs, ssh into, or view your Devbox status from the [dashboard](https://dashboard.runloop.ai)
+View logs, ssh into, or view your Devbox status from the [dashboard](https://platform.runloop.ai)
 
 ### CLI
 Use the Runloop CLI to view logs, execute commands, and more.

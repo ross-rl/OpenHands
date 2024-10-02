@@ -7,6 +7,7 @@ from zipfile import ZipFile
 
 import tenacity
 from runloop_api_client import APIStatusError, Runloop
+from runloop_api_client.types.devbox_create_params import LaunchParameters
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
@@ -53,10 +54,14 @@ class RunloopRuntime(Runtime):
         self.config = config
 
         self.api_client = Runloop(bearer_token=config.runloop_api_key)
+        print(config.sandbox.timeout)
         self.devbox = self.api_client.devboxes.create(
             name=sid,
             setup_commands=[f'mkdir -p {config.workspace_mount_path_in_sandbox}'],
             prebuilt='openhands',
+            launch_parameters=LaunchParameters(
+                keep_alive_time_seconds=config.sandbox.timeout,
+            ),
         )
         self.shell_name = 'openhands'
 

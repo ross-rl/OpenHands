@@ -54,7 +54,6 @@ class RunloopRuntime(Runtime):
         self.config = config
 
         self.api_client = Runloop(bearer_token=config.runloop_api_key)
-        print(config.sandbox.timeout)
         self.devbox = self.api_client.devboxes.create(
             name=sid,
             setup_commands=[f'mkdir -p {config.workspace_mount_path_in_sandbox}'],
@@ -75,8 +74,6 @@ class RunloopRuntime(Runtime):
             return
 
         devbox = self.api_client.devboxes.retrieve(id=self.devbox.id)
-        print(f'Devbox status: {devbox.status}')
-
         if devbox.status != 'running':
             raise ConnectionRefusedError('Devbox is not running')
 

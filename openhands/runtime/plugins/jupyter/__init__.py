@@ -24,7 +24,7 @@ class JupyterPlugin(Plugin):
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
             (
-                f"su - {username} -s /bin/bash << 'EOF'\n"
+                f"sudo su - {username} -s /bin/bash << 'EOF'\n"
                 'cd /openhands/code\n'
                 'export POETRY_VIRTUALENVS_PATH=/openhands/poetry;\n'
                 'export PYTHONPATH=/openhands/code:$PYTHONPATH;\n'

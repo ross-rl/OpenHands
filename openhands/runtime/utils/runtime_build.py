@@ -125,6 +125,8 @@ def prep_docker_build_folder(
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
+    print('generated dockerfile!')
+    print(dockerfile_content)
     if os.getenv('SKIP_CONTAINER_LOGS', 'false') != 'true':
         logger.debug(
             (

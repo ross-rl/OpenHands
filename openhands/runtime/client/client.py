@@ -221,7 +221,7 @@ class RuntimeClient:
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
         self.shell = pexpect.spawn(
-            f'su {username}',
+            f'sudo su {username}',
             encoding='utf-8',
             echo=False,
         )
@@ -374,8 +374,10 @@ class RuntimeClient:
 
     def _parse_exit_code(self, output: str) -> int:
         try:
-            exit_code = int(output.strip().split()[0])
-        except Exception:
+            print(f'rfdbg.output=<<{output}>>')
+            exit_code = int(output.strip().strip().split()[0])
+        except Exception as e:
+            logger.error(e)
             logger.error('Error getting exit code from bash script')
             # If we try to run an invalid shell script the output sometimes includes error text
             # rather than the error code - we assume this is an error

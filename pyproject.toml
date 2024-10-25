@@ -53,7 +53,7 @@ pylatexenc = "*"
 tornado = "*"
 python-dotenv = "*"
 protobuf = ">=4.21.6,<6.0.0" # chromadb currently fails on 5.0+
-runloop-api-client = "0.1.0a23"
+runloop-api-client = "0.7.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"

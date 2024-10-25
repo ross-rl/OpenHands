@@ -1,6 +1,7 @@
 import logging
 import os
 import tempfile
+import time
 from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
@@ -70,10 +71,13 @@ class RunloopRuntime(Runtime):
     )
     def _wait_until_alive(self):
         """Pull devbox status until it is running"""
+        print(f'devbox.state={self.devbox.status}')
+
         if self.devbox.status == 'running':
             return
 
         devbox = self.api_client.devboxes.retrieve(id=self.devbox.id)
+        print(f'devbox.state={devbox.status}')
         if devbox.status != 'running':
             raise ConnectionRefusedError('Devbox is not running')
 
@@ -89,9 +93,12 @@ class RunloopRuntime(Runtime):
         self.devbox = devbox
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        print('run_ipython')
+
         raise NotImplementedError
 
     def read(self, action: FileReadAction) -> Observation:
+        print('read')
         self._wait_until_alive()
 
         try:
@@ -209,6 +216,8 @@ class RunloopRuntime(Runtime):
             raise e
 
     def run(self, action: CmdRunAction) -> Observation:
+        print('run')
+
         self._wait_until_alive()
         try:
             command = ''
@@ -228,11 +237,44 @@ class RunloopRuntime(Runtime):
             else:
                 formatted_command = f"sudo /bin/bash -c '{command}'"
 
-            result = self.api_client.devboxes.execute_sync(
-                id=self.devbox.id,
-                command=formatted_command,
-                shell_name=self.shell_name,
-            )
+            # Execute async -
+            if action.timeout:
+                print('executing async')
+                result = self.api_client.devboxes.execute_async(
+                    id=self.devbox.id,
+                    command=formatted_command,
+                    shell_name=self.shell_name,
+                )
+                print(f'executing async result={result}')
+                deadline = time.time() + action.timeout
+                while time.time() < deadline:
+                    result = self.api_client.devboxes.executions.retrieve(
+                        id=self.devbox.id, execution_id=result.execution_id
+                    )
+                    print(f'executing async result={result}')
+                    if result.status == 'completed':
+                        break
+                    time.sleep(0.5)
+
+                if time.time() > deadline and result.status != 'completed':
+                    # Kill execution & return
+                    self.api_client.devboxes.executions.kill(
+                        id=self.devbox.id, execution_id=result.execution_id
+                    )
+                    result = self.api_client.devboxes.executions.retrieve(
+                        id=self.devbox.id, execution_id=result.execution_id
+                    )
+
+                    print(f'killed, result={result}')
+                    # Sigkill -> sigint
+                    result.exit_status = 130
+
+            else:
+                result = self.api_client.devboxes.execute_sync(
+                    id=self.devbox.id,
+                    command=formatted_command,
+                    shell_name=self.shell_name,
+                )
 
             return CmdOutputObservation(
                 content=result.stdout.replace('\n', '\r\n'),
